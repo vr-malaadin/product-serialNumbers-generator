@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Serial Numbers Template</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9093/9093095.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --surface: #ffffff;
+            --background: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: var(--surface);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 60rem; /* Adjusted width for laptops */
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); /* Responsive grid */
+            gap: 1rem;
+            background: var(--background);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 0.25rem;
+			cursor: pointer;
+        }
+
+        button {
+			margin-top: 1rem;
+			width: 33%; /* Set the width to 33% */
+			padding: 0.75rem;
+			background: var(--primary);
+			color: white;
+			border: none;
+			border-radius: 0.5rem;
+			font-size: 0.875rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background-color 0.15s ease;
+			display: block; /* Center alignment */
+			margin-left: auto; /* Center alignment */
+			margin-right: auto; /* Center alignment */
+		}
+
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        .error {
+            color: var(--error);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+			display: block; /* Center alignment */
+			text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Modem Serial Number Generator</h1>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="serialStart">Serial Number Prefix</label>
+                <input type="text" id="serialStart" placeholder="e.g. SN-" value="SN-">
+            </div>
+            <div class="form-group">
+                <label for="serialEnd">Serial Number Suffix</label>
+                <input type="text" id="serialEnd" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label for="padStart">Number Length</label>
+                <input type="number" id="padStart" min="1" value="6">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="checkbox-group">
+                <input type="checkbox" id="includePackages">
+                <label for="includePackages">Generate Package Groups</label>
+            </div>
+            <div id="packageOptions" class="hidden">
+                <div class="form-group">
+                    <label for="packageName">Package Name Prefix</label>
+                    <input type="text" id="packageName" placeholder="e.g. Package A" value="Package A">
+                </div>
+                <div class="form-group">
+                    <label for="packageCount">Number of Packages</label>
+                    <input type="number" id="packageCount" min="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label for="serialPerPackage">Serial Numbers per Package</label>
+                    <input type="number" id="serialPerPackage" min="1" value="5">
+                </div>
+            </div>
+            <div id="serialCountDiv">
+                <div class="form-group">
+                    <label for="serialCount">Total Serial Numbers</label>
+                    <input type="number" id="serialCount" min="1" value="5">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="generateExcel()">Generate Excel Template</button>
+        <div id="errorMessage" class="error hidden"></div>
+    </div>
+
+    <script>
+        document.getElementById('includePackages').addEventListener('change', function() {
+            const packageOptions = document.getElementById('packageOptions');
+            const serialCountDiv = document.getElementById('serialCountDiv');
+            if (this.checked) {
+                packageOptions.classList.remove('hidden');
+                serialCountDiv.classList.add('hidden');
+            } else {
+                packageOptions.classList.add('hidden');
+                serialCountDiv.classList.remove('hidden');
+            }
+        });
+
+        function generateExcel() {
+            const serialStart = document.getElementById('serialStart').value.trim();
+            const serialEnd = document.getElementById('serialEnd').value.trim();
+            const padStart = parseInt(document.getElementById('padStart').value);
+            const includePackages = document.getElementById('includePackages').checked;
+
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.classList.add('hidden');
+            errorMessage.textContent = '';
+
+            if (!serialStart || isNaN(padStart) || padStart < 1) {
+                errorMessage.textContent = "Please fill in the Serial Number details properly.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            let data = [];
+            let serialCounter = 1;
+
+            if (includePackages) {
+                const packageNameBase = document.getElementById('packageName').value || 'Package A';
+                const packageCount = parseInt(document.getElementById('packageCount').value);
+                const serialPerPackage = parseInt(document.getElementById('serialPerPackage').value);
+
+                if (isNaN(packageCount) || isNaN(serialPerPackage) || packageCount < 1 || serialPerPackage < 1) {
+                    errorMessage.textContent = "Please provide valid package count and serial number per package.";
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+
+                for (let i = 0; i < packageCount; i++) {
+                    const packageName = `${packageNameBase}-${i + 1}`;
+                    for (let j = 0; j < serialPerPackage; j++) {
+                        data.push({
+                            "Serial Number": `${serialStart}${String(serialCounter).padStart(padStart, "0")}${serialEnd}`,
+                            "Package Name": packageName,
+                            "Hardware Version": "",
+                            "IMEI": "",
+                            "Manufacturer Date (yyyy-MM-dd)": "",
+                            "Warranty Period (Months)": "",
+                            "Mac Address": "",
+                            "Notes": "",
+                            "Color": "",
+                            "Software Version": ""
+                        });
+                        serialCounter++;
+                    }
+                }
+            } else {
+                const serialCount = parseInt(document.getElementById('serialCount').value);
+                if (isNaN(serialCount) || serialCount < 1) {
+                    errorMessage.textContent = "Please provide a valid serial number count.";
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+
+                for (let i = 0; i < serialCount; i++) {
+                    data.push({
+                        "Serial Number": `${serialStart}${String(serialCounter).padStart(padStart, "0")}${serialEnd}`,
+                        "Hardware Version": "",
+                        "IMEI": "",
+                        "Manufacturer Date (yyyy-MM-dd)": "",
+                        "Warranty Period (Months)": "",
+                        "Mac Address": "",
+                        "Notes": "",
+                        "Color": "",
+                        "Software Version": ""
+                    });
+                    serialCounter++;
+                }
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const columnWidths = [
+                { wpx: 150 },
+            ];
+
+            if (includePackages) {
+                columnWidths.push({ wpx: 150 });
+            }
+
+            worksheet['!cols'] = columnWidths;
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+            XLSX.writeFile(workbook, "Product_Item_Template.xlsx");
+        }
+    </script>
+</body>
+</html>
