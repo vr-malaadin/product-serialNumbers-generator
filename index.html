@@ -58,7 +58,7 @@
 
         .form-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); /* Responsive grid */
+            grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); /* Responsive grid */
             gap: 1rem;
             background: var(--background);
             border-radius: 0.75rem;
@@ -154,6 +154,10 @@
                 <input type="text" id="serialStart" placeholder="e.g. SN-" value="SN-">
             </div>
             <div class="form-group">
+                <label for="startedSerial">Started Serial Number</label>
+                <input type="number" id="startedSerial" min="0" value="1">
+            </div>
+            <div class="form-group">
                 <label for="serialEnd">Serial Number Suffix</label>
                 <input type="text" id="serialEnd" placeholder="Optional">
             </div>
@@ -209,6 +213,7 @@
 
         function generateExcel() {
             const serialStart = document.getElementById('serialStart').value.trim();
+            const startedSerial = parseInt(document.getElementById('startedSerial').value);
             const serialEnd = document.getElementById('serialEnd').value.trim();
             const padStart = parseInt(document.getElementById('padStart').value);
             const includePackages = document.getElementById('includePackages').checked;
@@ -217,14 +222,14 @@
             errorMessage.classList.add('hidden');
             errorMessage.textContent = '';
 
-            if (!serialStart || isNaN(padStart) || padStart < 1) {
+            if (!serialStart || isNaN(padStart) || padStart < 1 || ( !isNaN(startedSerial) && startedSerial < 0)) {
                 errorMessage.textContent = "Please fill in the Serial Number details properly.";
                 errorMessage.classList.remove('hidden');
                 return;
             }
 
             let data = [];
-            let serialCounter = 1;
+            let serialCounter =  isNaN(startedSerial)? 1:  startedSerial;
 
             if (includePackages) {
                 const packageNameBase = document.getElementById('packageName').value || 'Package A';
