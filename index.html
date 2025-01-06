@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,26 +103,25 @@
             width: 1rem;
             height: 1rem;
             border-radius: 0.25rem;
-			cursor: pointer;
+            cursor: pointer;
         }
 
         button {
-			margin-top: 1rem;
-			width: 33%; /* Set the width to 33% */
-			padding: 0.75rem;
-			background: var(--primary);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			font-size: 0.875rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: background-color 0.15s ease;
-			display: block; /* Center alignment */
-			margin-left: auto; /* Center alignment */
-			margin-right: auto; /* Center alignment */
-		}
-
+            margin-top: 1rem;
+            width: 33%; /* Set the width to 33% */
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            display: block; /* Center alignment */
+            margin-left: auto; /* Center alignment */
+            margin-right: auto; /* Center alignment */
+        }
 
         button:hover {
             background: var(--primary-hover);
@@ -133,12 +131,20 @@
             color: var(--error);
             font-size: 0.875rem;
             margin-top: 0.5rem;
-			display: block; /* Center alignment */
-			text-align: center;
+            display: block; /* Center alignment */
+            text-align: center;
         }
 
         .hidden {
             display: none;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            width:25%;
+            font-size: 0.875rem;
+            background: #f1f5f9;
         }
     </style>
 </head>
@@ -194,6 +200,13 @@
             </div>
         </div>
 
+        <center>
+            <label for="serialPreview">Preview of First Serial Number</label>
+            <div id="serialPreview" class="form-control">
+                SN-000001
+            </div>
+        </center>
+
         <button onclick="generateExcel()">Generate Excel Template</button>
         <div id="errorMessage" class="error hidden"></div>
     </div>
@@ -210,6 +223,23 @@
                 serialCountDiv.classList.remove('hidden');
             }
         });
+
+        // Call the updateSerialPreview when any input changes
+        document.getElementById('serialStart').addEventListener('input', updateSerialPreview);
+        document.getElementById('startedSerial').addEventListener('input', updateSerialPreview);
+        document.getElementById('serialEnd').addEventListener('input', updateSerialPreview);
+        document.getElementById('padStart').addEventListener('input', updateSerialPreview);
+
+        // Function to update the serial number preview
+        function updateSerialPreview() {
+            const serialStart = document.getElementById('serialStart').value.trim();
+            const startedSerial = parseInt(document.getElementById('startedSerial').value) || 1;
+            const serialEnd = document.getElementById('serialEnd').value.trim();
+            const padStart = parseInt(document.getElementById('padStart').value) || 6;
+
+            const firstSerialNumber = `${serialStart}${String(startedSerial).padStart(padStart, '0')}${serialEnd}`;
+            document.getElementById('serialPreview').textContent = firstSerialNumber;
+        }
 
         function generateExcel() {
             const serialStart = document.getElementById('serialStart').value.trim();
